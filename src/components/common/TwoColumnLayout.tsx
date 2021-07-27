@@ -8,8 +8,8 @@ export const TwoColumnLayout: React.FC<Props> = ({
 }) => {
   return (
     <Row gap={0.8} justify="center">
-      <Col span={12}>{leftElement}</Col>
-      <Col span={12}>{rightElement}</Col>
+      <Col span={14}>{leftElement}</Col>
+      <Col span={10}>{rightElement}</Col>
     </Row>
   )
 }
