@@ -1,5 +1,5 @@
 type Props = { leftElement: React.ReactNode; rightElement: React.ReactNode }
-import { Col, Grid, Row } from '@geist-ui/react'
+import { Col, Row } from '@geist-ui/react'
 import React from 'react'
 
 export const TwoColumnLayout: React.FC<Props> = ({
