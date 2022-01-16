@@ -1,15 +1,17 @@
-type Props = { leftElement: React.ReactNode; rightElement: React.ReactNode }
-import { Col, Row } from '@geist-ui/react'
+// import { Col, Row } from '@geist-ui/react'
 import React from 'react'
+import { SimpleGrid, Box } from '@chakra-ui/react'
+
+type Props = { leftElement: React.ReactNode; rightElement: React.ReactNode }
 
 export const TwoColumnLayout: React.FC<Props> = ({
   leftElement,
   rightElement
 }) => {
   return (
-    <Row gap={0.8} justify="center">
-      <Col span={14}>{leftElement}</Col>
-      <Col span={10}>{rightElement}</Col>
-    </Row>
+    <SimpleGrid columns={2} spacing={2}>
+      <Box>{leftElement}</Box>
+      <Box>{rightElement}</Box>
+    </SimpleGrid>
   )
 }

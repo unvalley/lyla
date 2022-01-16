@@ -1,12 +1,13 @@
 import '../styles/globals.css'
 import type { AppProps } from 'next/app'
-import { GeistProvider } from '@geist-ui/react'
+import React from 'react'
+import { ChakraProvider } from '@chakra-ui/react'
 
 function MyApp({ Component, pageProps }: AppProps) {
   return (
-    <GeistProvider>
+    <ChakraProvider>
       <Component {...pageProps} />
-    </GeistProvider>
+    </ChakraProvider>
   )
 }
 export default MyApp
