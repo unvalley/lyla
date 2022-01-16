@@ -47,29 +47,20 @@ export const EditorTemplate: React.FC<Props> = () => {
     <div className="wrapper" onClick={focusEditor}>
       <TwoColumnLayout
         leftElement={
-          <>
-            <div
-              style={{
-                padding: '3.5rem',
-                overflow: 'hidden',
-                minHeight: '80vh',
-                fontSize: '24px'
-              }}
-            >
-              <Editor
-                ref={editor}
-                editorKey="key"
-                editorState={editorState}
-                onChange={onChange}
-                placeholder="Type something..."
-              />
-            </div>
-          </>
+          <Box overflow="hidden" fontSize="24px" minH={'80vh'} p={6}>
+            <Editor
+              ref={editor}
+              editorKey="key"
+              editorState={editorState}
+              onChange={onChange}
+              placeholder="Type something..."
+            />
+          </Box>
         }
         rightElement={
-          <div>
+          <Box p={6}>
             <Heading size="lg">文章スコア</Heading>
-            <Spacer />
+            <Spacer mb={4} />
             <SimpleGrid columns={1} spacing={4}>
               <Box>
                 <Flex spacing={4}>
@@ -109,6 +100,9 @@ export const EditorTemplate: React.FC<Props> = () => {
               </Box>
             </SimpleGrid>
 
+            <Spacer mb={6} />
+            <Heading size="lg">フィードバック</Heading>
+
             {shouldShowSuggest && (
               <></>
               // <SuggestCard
@@ -119,7 +113,7 @@ export const EditorTemplate: React.FC<Props> = () => {
               //   onClick={() => alert('書かれた文章の状態を考慮する必要がある')}
               // />
             )}
-          </div>
+          </Box>
         }
       />
     </div>
