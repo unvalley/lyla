@@ -37,27 +37,31 @@ export const EditorTemplate: React.FC<Props> = () => {
 
   return (
     <div className="wrapper" onClick={focusEditor}>
+      <h2>社会的資本について</h2>
       <TwoColumnLayout
         leftElement={
-          <div
-            style={{
-              padding: '3.5rem',
-              overflow: 'hidden',
-              minHeight: '80vh',
-              fontSize: '24px'
-            }}
-          >
-            <Editor
-              ref={editor}
-              editorKey="key"
-              editorState={editorState}
-              onChange={onChange}
-              placeholder="Type something..."
-            />
-          </div>
+          <>
+            <div
+              style={{
+                padding: '3.5rem',
+                overflow: 'hidden',
+                minHeight: '80vh',
+                fontSize: '24px'
+              }}
+            >
+              <Editor
+                ref={editor}
+                editorKey="key"
+                editorState={editorState}
+                onChange={onChange}
+                placeholder="Type something..."
+              />
+            </div>
+          </>
         }
         rightElement={
           <div>
+            <p>ああああ</p>
             <h2 style={{ fontSize: '28px' }}>サジェスト</h2>
             {shouldShowSuggest && (
               <SuggestCard
