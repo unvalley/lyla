@@ -1,9 +1,16 @@
 import React, { useEffect, useState } from 'react'
-import { Editor, EditorState } from 'draft-js'
+import {
+  convertFromRaw,
+  convertToRaw,
+  Editor,
+  EditorState,
+  RichUtils
+} from 'draft-js'
 import { TwoColumnLayout } from '../common/TwoColumnLayout'
 import 'draft-js/dist/Draft.css'
 import {
   Box,
+  Button,
   Flex,
   Heading,
   Progress,
@@ -11,12 +18,12 @@ import {
   Spacer,
   Text
 } from '@chakra-ui/react'
+import { stateToHTML } from 'draft-js-export-html'
 
 type Props = {}
 
 export const EditorTemplate: React.FC<Props> = () => {
   const [canShowEditor, setCanShowEditor] = useState(false)
-  const [shouldShowSuggest, setShouldShowSuggest] = useState(false)
   const [editorState, setEditorState] = useState(() =>
     EditorState.createEmpty()
   )
@@ -30,18 +37,33 @@ export const EditorTemplate: React.FC<Props> = () => {
     }
   }
 
+  const saveText = (title: string) => {
+    const contentState = editorState.getCurrentContent()
+    const content = convertToRaw(contentState)
+    const html = stateToHTML(contentState)
+    // 以下DBに保存する処理
+    console.log(content, html)
+  }
+
+  const loadFromHtml = (content: any) => {
+    const contentState = convertFromRaw(JSON.parse(content))
+    const editorState = EditorState.createWithContent(contentState)
+    setEditorState(editorState)
+  }
+
   const onChange = (editorState: EditorState) => {
-    const existBiasWord = editorState
-      .getCurrentContent()
-      .getPlainText()
-      .includes('バイアス')
-
-    existBiasWord ? setShouldShowSuggest(true) : setShouldShowSuggest(false)
-
     setEditorState(editorState)
   }
 
   if (!canShowEditor) return <></>
+
+  const customMap: { [key in string]: any } = {
+    FEED_BACK: {
+      fontWeight: 'bold',
+      color: 'red',
+      textDecoration: 'underline'
+    }
+  }
 
   return (
     <div className="wrapper" onClick={focusEditor}>
@@ -54,11 +76,20 @@ export const EditorTemplate: React.FC<Props> = () => {
               editorState={editorState}
               onChange={onChange}
               placeholder="Type something..."
+              customStyleMap={customMap}
             />
           </Box>
         }
         rightElement={
           <Box p={6}>
+            <Button
+              colorScheme="red"
+              onMouseDown={() =>
+                onChange(RichUtils.toggleInlineStyle(editorState, 'FEED_BACK'))
+              }
+            >
+              採点
+            </Button>
             <Heading size="lg">文章スコア</Heading>
             <Spacer mb={4} />
             <SimpleGrid columns={1} spacing={4}>
@@ -102,17 +133,6 @@ export const EditorTemplate: React.FC<Props> = () => {
 
             <Spacer mb={6} />
             <Heading size="lg">フィードバック</Heading>
-
-            {shouldShowSuggest && (
-              <></>
-              // <SuggestCard
-              //   label={'バイアス'}
-              //   message={
-              //     '意見が偏っている可能性があります．この意見に対する反対の意見を考えてみると，新しい見方ができるかもしれません'
-              //   }
-              //   onClick={() => alert('書かれた文章の状態を考慮する必要がある')}
-              // />
-            )}
           </Box>
         }
       />
