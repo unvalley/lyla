@@ -9,7 +9,7 @@ export const TwoColumnLayout: React.FC<Props> = ({
   rightElement
 }) => {
   return (
-    <SimpleGrid columns={2} spacing={2}>
+    <SimpleGrid columns={2} spacing={1}>
       <Box>{leftElement}</Box>
       <Box>{rightElement}</Box>
     </SimpleGrid>
