@@ -54,14 +54,17 @@ const feedbacks = [
     measurement: '妥当性',
     message: `妥当性の観点で，問題がある可能性があります．見直し・修正を行いましょう．
     意見が妥当であることを示すために，論拠を明確にするとよいでしょう．
-    `
+    `,
+    exampleMessage:
+      '所得格差拡大の一因として，労働者の給与の変化が挙げられる．1960年と2016年の雇用統計を比較すると…'
   },
   {
     title: '論理性',
     measurement: '論理性',
     message: `論理性の観点で，問題がある可能性があります．見直し・修正を行いましょう．
     意見を支える論理構造に問題がないかを確かめてみるとよいでしょう．
-    `
+    `,
+    exampleMessage: '〇〇が起きた原因は，△△にある．△△は…'
   }
 ]
 
@@ -152,19 +155,19 @@ export const EditorTemplate: React.FC<Props> = () => {
     setTextMeasurementScores([
       {
         measurement: '論理性',
-        score: Math.ceil(Math.random() * (100 - 0) + 0)
+        score: Math.ceil(Math.random() * (100 - 30) + 30)
       },
       {
         measurement: '妥当性',
-        score: Math.ceil(Math.random() * (100 - 0) + 0)
+        score: Math.ceil(Math.random() * (100 - 30) + 30)
       },
       {
         measurement: '理解力',
-        score: Math.ceil(Math.random() * (100 - 0) + 0)
+        score: Math.ceil(Math.random() * (100 - 30) + 30)
       },
       {
         measurement: '文章力',
-        score: Math.ceil(Math.random() * (100 - 0) + 0)
+        score: Math.ceil(Math.random() * (100 - 30) + 30)
       }
     ])
     toast({
@@ -184,7 +187,17 @@ export const EditorTemplate: React.FC<Props> = () => {
   if (!canShowEditor) return <></>
 
   const customMap: DraftStyleMap = {
-    FEED_BACK: {
+    VALIDNESS_FEED_BACK: {
+      fontWeight: 'bold',
+      color: '#805AD5',
+      textDecoration: 'underline'
+    },
+    LOGICALITY_FEED_BACK: {
+      fontWeight: 'bold',
+      color: '#3182CE',
+      textDecoration: 'underline'
+    },
+    RED_FEED_BACK: {
       fontWeight: 'bold',
       color: 'red',
       textDecoration: 'underline'
@@ -224,12 +237,31 @@ export const EditorTemplate: React.FC<Props> = () => {
           mt={{ base: 4, md: 0 }}
         >
           <Button
-            colorScheme="red"
-            onMouseDown={() =>
-              onChange(RichUtils.toggleInlineStyle(editorState, 'FEED_BACK'))
-            }
+            colorScheme="purple"
+            onMouseDown={() => {
+              const useLessCondition = new Date().getSeconds() % 2 == 0
+              onChange(
+                RichUtils.toggleInlineStyle(
+                  editorState,
+                  useLessCondition
+                    ? 'VALIDNESS_FEED_BACK'
+                    : 'LOGICALITY_FEED_BACK'
+                )
+              )
+            }}
           >
             ハイライト
+          </Button>
+          <Button
+            colorScheme="red"
+            onMouseDown={() => {
+              onChange(
+                RichUtils.toggleInlineStyle(editorState, 'RED_FEED_BACK')
+              )
+            }}
+            ml={4}
+          >
+            赤でハイライト
           </Button>
           <Button
             colorScheme="green"
@@ -309,10 +341,11 @@ export const EditorTemplate: React.FC<Props> = () => {
               return (
                 // TODO: set correct key
                 <FeedBackCard
+                  key={idx}
                   title={e.title}
                   message={e.message}
                   measurement={e.measurement}
-                  key={idx}
+                  exampleMessage={e.exampleMessage}
                 />
               )
             })}
@@ -421,7 +454,12 @@ export const EditorTemplate: React.FC<Props> = () => {
   )
 }
 
-type FeedBackCardProps = { title: string; message: string; measurement: string }
+type FeedBackCardProps = {
+  title: string
+  message: string
+  measurement: string
+  exampleMessage: string
+}
 const FeedBackCard: React.FC<FeedBackCardProps> = (props) => {
   // TODO: OK押したら消えるようにする
   return (
@@ -450,7 +488,7 @@ const FeedBackCard: React.FC<FeedBackCardProps> = (props) => {
           修正のための参考例文
         </Text>
         <Text fontSize={{ base: 'sm' }} textAlign={'left'} maxW={'4xl'}>
-          木曾路はすべて山の中である。あるところは岨づたいに行く崖の道であり、あるところは数十間の深さに臨む木
+          {props.exampleMessage}
         </Text>
       </Stack>
 
