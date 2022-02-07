@@ -380,7 +380,7 @@ export const EditorTemplate: React.FC<Props> = () => {
                       colorScheme={'black'}
                       size="sm"
                     >
-                      {e.buttonMessage}
+                      Details
                     </Button>
                     <Button
                       colorScheme={'whatsapp'}
