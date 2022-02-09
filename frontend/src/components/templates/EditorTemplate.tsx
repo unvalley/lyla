@@ -15,8 +15,6 @@ import {
   Flex,
   FormControl,
   FormLabel,
-  Grid,
-  GridItem,
   Heading,
   Modal,
   ModalBody,
@@ -130,20 +128,6 @@ export const EditorTemplate: React.FC<Props> = () => {
     if (editor.current) {
       editor.current.focus()
     }
-  }
-
-  const saveText = (title: string) => {
-    const contentState = editorState.getCurrentContent()
-    const content = convertToRaw(contentState)
-    const html = stateToHTML(contentState)
-    // 以下DBに保存する処理
-    console.log(content, html)
-  }
-
-  const loadFromHtml = (content: any) => {
-    const contentState = convertFromRaw(JSON.parse(content))
-    const editorState = EditorState.createWithContent(contentState)
-    setEditorState(editorState)
   }
 
   const _sleep = (ms: number) =>
@@ -512,14 +496,16 @@ const FeedBackCard: React.FC<FeedBackCardProps> = (props) => {
   )
 }
 
-{
-  /* スコアに応じたキャラクターの表示 */
-}
-{
-  /* {arraySum(textMeasurementScores.map((e) => e.score)) >=
-                  170 ? (
-                    <span>😸</span>
-                  ) : (
-                    <span>😿</span>
-                  )} */
-}
+// const saveText = (title: string) => {
+//   const contentState = editorState.getCurrentContent()
+//   const content = convertToRaw(contentState)
+//   const html = stateToHTML(contentState)
+//   // 以下DBに保存する処理
+//   console.log(content, html)
+// }
+
+// const loadFromHtml = (content: any) => {
+//   const contentState = convertFromRaw(JSON.parse(content))
+//   const editorState = EditorState.createWithContent(contentState)
+//   setEditorState(editorState)
+// }
