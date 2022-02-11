@@ -80,7 +80,7 @@ logicality_model = ScoreRegressionModel("logicality")
 
 
 # singleton
-def get_models():
+def get_score_regression_models():
     return {
         "logicality": logicality_model,
         # "validness": validness_model,
