@@ -1,12 +1,5 @@
 import React, { useEffect, useState } from 'react'
-import {
-  convertFromRaw,
-  convertToRaw,
-  DraftStyleMap,
-  Editor,
-  EditorState,
-  RichUtils
-} from 'draft-js'
+import { DraftStyleMap, Editor, EditorState, RichUtils } from 'draft-js'
 import { TwoColumnLayout } from '../common/TwoColumnLayout'
 import 'draft-js/dist/Draft.css'
 import {
@@ -30,10 +23,12 @@ import {
   Stack,
   Text,
   Textarea,
+  toast,
   useDisclosure,
   useToast
 } from '@chakra-ui/react'
-import { stateToHTML } from 'draft-js-export-html'
+// import { stateToHTML } from 'draft-js-export-html'
+import ky from 'ky'
 
 type Props = {}
 
@@ -85,10 +80,9 @@ const problemInfo = {
   title:
     'グローバリゼーションは、世界、または各国の所得格差をどのように変化させましたか。また、なぜ所得格差拡大、または縮小の現象が現れたと考えますか。300字以内で答えなさい。'
 }
-// e.score * 2 * 10
 
-const arraySum = (nums: Array<number>) =>
-  nums.reduce((partialSum, a) => partialSum + a, 0)
+// const arraySum = (nums: Array<number>) =>
+//   nums.reduce((partialSum, a) => partialSum + a, 0)
 
 export const EditorTemplate: React.FC<Props> = () => {
   const toast = useToast()
@@ -99,23 +93,14 @@ export const EditorTemplate: React.FC<Props> = () => {
     EditorState.createEmpty()
   )
   const [isScoring, setIsScoring] = useState(false)
+  const measurements = ['論理性', '妥当性', '理解力', '文章力']
   const [textMeasurementScores, setTextMeasurementScores] = useState([
-    {
-      measurement: '論理性',
-      score: 64
-    },
-    {
-      measurement: '妥当性',
-      score: 56
-    },
-    {
-      measurement: '理解力',
-      score: 80
-    },
-    {
-      measurement: '文章力',
-      score: 100
-    }
+    ...measurements.map((e) => {
+      return {
+        measurement: e,
+        score: 0
+      }
+    })
   ])
 
   useEffect(() => {
@@ -136,24 +121,15 @@ export const EditorTemplate: React.FC<Props> = () => {
   const resetTextMeasurementScores = async () => {
     setIsScoring(true)
     await _sleep(3000)
-    setTextMeasurementScores([
-      {
-        measurement: '論理性',
-        score: Math.ceil(Math.random() * (100 - 30) + 30)
-      },
-      {
-        measurement: '妥当性',
-        score: Math.ceil(Math.random() * (100 - 30) + 30)
-      },
-      {
-        measurement: '理解力',
-        score: Math.ceil(Math.random() * (100 - 30) + 30)
-      },
-      {
-        measurement: '文章力',
-        score: Math.ceil(Math.random() * (100 - 30) + 30)
-      }
-    ])
+
+    const plainText = editorState.getCurrentContent().getPlainText()
+    const scoring_result: any = await ky
+      .post(`https://localhost:8080/api/predict/scores`, {
+        json: { text: plainText }
+      })
+      .json()
+
+    setTextMeasurementScores(scoring_result['all_scores'])
     toast({
       title: `採点が完了しました`,
       position: 'bottom-right',

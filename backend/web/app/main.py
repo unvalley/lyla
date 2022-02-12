@@ -2,6 +2,7 @@ from fastapi import FastAPI, Depends
 from pydantic import BaseModel
 from typing import Dict, Union, List
 from score_regression_model import get_score_regression_models, ScoreRegressionModel
+from example_generator_model import get_example_generator_model
 import pandas as pd
 
 app = FastAPI()
@@ -39,25 +40,37 @@ async def predict_scores(request: AllScoringRequest):
     # understanding_result = models["understanding"].predict(request.text)
 
     # attentionの追加
+    # 多分attentionは圧縮しないと乗らない気がする
     result = [
-        dict(measurement='論理性', score=to_score(
-            logicality_result["all_preds"])),
-        dict(measurement='妥当性', score=to_score(
-            logicality_result["all_preds"])),
-        dict(measurement='理解力', score=to_score(
-            logicality_result["all_preds"])),
-        dict(measurement='文章力', score=to_score(
-            logicality_result["all_preds"])),
+        dict(measurement='論理性',
+             score=to_score(logicality_result["all_preds"]),
+             attentions=logicality_result["all_attentions"]),
+        dict(measurement='妥当性',
+             score=to_score(logicality_result["all_preds"]),
+             attentions=logicality_result["all_attentions"]),
+        dict(measurement='理解力',
+             score=to_score(logicality_result["all_preds"]),
+             attentions=logicality_result["all_attentions"]),
+        dict(measurement='文章力',
+             score=to_score(logicality_result["all_preds"]),
+             attentions=logicality_result["all_attentions"]),
     ]
 
     return AllScoringResponse(all_scores=result)
 
 
 class ExampleTextResponse(BaseModel):
-    text: str
+    example_texts: List[str]
+
+
+class ExampleTextRequest(BaseModel):
+    text:  str
 
 
 @ app.post("/predict/example_text", response_model=ExampleTextResponse)
-async def predict_example_text(request):
+async def predict_example_text(request: ExampleTextRequest):
+    # 入力をどうするかとか考える必要あるけど，とりあえずtextを受け取ってtextのリストを返せればOK
     # input: Attentionの重いテキストを入力とする
-    return None
+    model = get_example_generator_model()
+    result = model.predict(request.text)
+    return {"example_texts": result}
