@@ -34,10 +34,9 @@ async def predict_scores(request: AllScoringRequest):
     # TODO: 並列・並行処理化
     text_df = pd.DataFrame({'answer': [request.text]})
     logicality_result = models["logicality"].predict(text_df)
-
-    # writing_result = models["writing"].predict(request.text)
-    # validness_result = models["validness"].predict(request.text)
-    # understanding_result = models["understanding"].predict(request.text)
+    validness_result = models["validness"].predict(text_df)
+    understanding_result = models["understanding"].predict(text_df)
+    writing_result = models["writing"].predict(text_df)
 
     # attentionの追加
     # 多分attentionは圧縮しないと乗らない気がする
@@ -46,14 +45,14 @@ async def predict_scores(request: AllScoringRequest):
              score=to_score(logicality_result["all_preds"]),
              attentions=logicality_result["all_attentions"]),
         dict(measurement='妥当性',
-             score=to_score(logicality_result["all_preds"]),
-             attentions=logicality_result["all_attentions"]),
+             score=to_score(validness_result["all_preds"]),
+             attentions=validness_result["all_attentions"]),
         dict(measurement='理解力',
-             score=to_score(logicality_result["all_preds"]),
-             attentions=logicality_result["all_attentions"]),
+             score=to_score(understanding_result["all_preds"]),
+             attentions=understanding_result["all_attentions"]),
         dict(measurement='文章力',
-             score=to_score(logicality_result["all_preds"]),
-             attentions=logicality_result["all_attentions"]),
+             score=to_score(writing_result["all_preds"]),
+             attentions=writing_result["all_attentions"]),
     ]
 
     return AllScoringResponse(all_scores=result)

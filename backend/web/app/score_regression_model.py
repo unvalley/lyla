@@ -74,16 +74,16 @@ class ScoreRegressionModel:
 
 
 logicality_model = ScoreRegressionModel("logicality")
-# validness_model = ScoreRegressionModel("validness")
-# understanding_model = ScoreRegressionModel("understanding")
-# writing_model = ScoreRegressionModel("writing")
+validness_model = ScoreRegressionModel("logicality")
+understanding_model = ScoreRegressionModel("logicality")
+writing_model = ScoreRegressionModel("logicality")
 
 
 # singleton
 def get_score_regression_models():
     return {
         "logicality": logicality_model,
-        # "validness": validness_model,
-        # "writing": writing_model,
-        # "understanding": understanding_model
+        "validness": validness_model,
+        "writing": writing_model,
+        "understanding": understanding_model
     }
