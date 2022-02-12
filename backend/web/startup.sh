@@ -1,6 +1,8 @@
 #!/bin/bash
 
 # generate tables
-python models.py
+# -- Currently, we don't need table
+# python models.py
+
 # start up uvicorn
-uvicorn main:app --host 0.0.0.0 --port 8080
+# uvicorn main:app --host 0.0.0.0 --port 8080
