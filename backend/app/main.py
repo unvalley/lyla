@@ -1,9 +1,10 @@
+import pandas as pd
+import example_generator_model
+import score_regression_model
 from fastapi import FastAPI, Depends
 from pydantic import BaseModel
 from typing import Dict, Union, List
-from score_regression_model import get_score_regression_models, ScoreRegressionModel
-from example_generator_model import get_example_generator_model
-import pandas as pd
+
 
 app = FastAPI()
 
