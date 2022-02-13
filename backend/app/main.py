@@ -156,7 +156,7 @@ BERT_MODEL = "cl-tohoku/bert-base-japanese-whole-word-masking"
 # fold=0を評価データにして作成したモデルを，訓練済みモデルとしている
 # - 学習データは，グローバルの小論文課題の回答・スコアデータ
 measurementToPreTrainedModel = {
-    "logicality": "../assets/scoring/model_all_logicality.pth",
+    "logicality": "./assets/scoring/model_all_logicality.pth",
     "validness": "assets/scoring/model_all_validness.pth",
     "understanding": "assets/scoring/model_all_understanding.pth",
     "writing": "assets/scoring/model_all_writing.pth",
