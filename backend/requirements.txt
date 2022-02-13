@@ -16,3 +16,4 @@ tqdm==4.62.3
 transformers==4.16.2
 typing-extensions==4.0.0
 uvicorn==0.17.0
+sentencepiece
