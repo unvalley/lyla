@@ -1,23 +1,42 @@
 import numpy as np
 import transformers
+import os
 import torch
 import pandas as pd
+import concurrent.futures as confu
 from fastapi import FastAPI, Depends
 from pydantic import BaseModel
-from typing import Dict, Union, List
+from typing import Dict, Union, List, Any
 from transformers import T5Tokenizer, AutoModelForCausalLM
 from torch.utils.data import Dataset, DataLoader
+from fastapi.middleware.cors import CORSMiddleware
+from collections import defaultdict
 
 
 app = FastAPI()
+
+origins = [
+    "http://localhost",
+    "http://localhost:8080",
+]
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,   # 追記により追加
+    allow_methods=["*"],      # 追記により追加
+    allow_headers=["*"]       # 追記により追加
+)
 
 
 class AllScoringRequest(BaseModel):
     text: str
 
 
-class AllScoringResponse(BaseModel):
-    all_scores: List[Dict[str, Union[str, int]]]
+class ScoringResponse(BaseModel):
+    measurement: str
+    score: float
+    attentions: Any
 
 
 @app.get("/health")
@@ -31,35 +50,81 @@ def to_score(all_preds: list) -> float:
     return score
 
 
-@app.post("/predict/scores", response_model=AllScoringResponse)
+def create_word_to_attention(all_preds: list, all_attentions: list, batch, tokenizer):
+    target_batch_attentions = all_attentions[0]
+    attention_weight = target_batch_attentions[-1]
+    word_to_attention = defaultdict(float)
+
+    for i in range(len(all_preds[0])):
+        first_sentence_ids = batch['ids'][i].numpy()
+        sentence = tokenizer.convert_ids_to_tokens(first_sentence_ids)
+        pred = all_preds[0][i]
+        seq_len = attention_weight.size()[2]
+
+        all_attens = torch.zeros(seq_len)
+        for j in range(12):
+            all_attens += attention_weight[i, j, 0, :]
+
+        for word, attn in zip(sentence, all_attens):
+            if word == "[SEP]":
+                break
+            word_to_attention[word] = attn.item()
+    return dict(word_to_attention)
+
+
+@app.post("/predict/scores", response_model=List[ScoringResponse])
 async def predict_scores(request: AllScoringRequest):
     models = get_score_regression_models()
 
-    # TODO: 並列・並行処理化
+    # TODO: パフォーマンス改善
     text_df = pd.DataFrame({'answer': [request.text]})
-    logicality_result = models["logicality"].predict(text_df)
-    validness_result = models["validness"].predict(text_df)
-    understanding_result = models["understanding"].predict(text_df)
-    writing_result = models["writing"].predict(text_df)
+    BERT_MODEL = "cl-tohoku/bert-base-japanese-whole-word-masking"
+    tokenizer = transformers.BertJapaneseTokenizer.from_pretrained(
+        BERT_MODEL, output_attentions=True)
 
-    # attentionの追加
-    # 多分attentionは圧縮しないと乗らない気がする
-    result = [
-        dict(measurement='論理性',
-             score=to_score(logicality_result["all_preds"]),
-             attentions=logicality_result["all_attentions"]),
-        dict(measurement='妥当性',
-             score=to_score(validness_result["all_preds"]),
-             attentions=validness_result["all_attentions"]),
-        dict(measurement='理解力',
-             score=to_score(understanding_result["all_preds"]),
-             attentions=understanding_result["all_attentions"]),
-        dict(measurement='文章力',
-             score=to_score(writing_result["all_preds"]),
-             attentions=writing_result["all_attentions"]),
-    ]
+    with confu.ThreadPoolExecutor(max_workers=os.cpu_count()) as executor:
+        logicality_future = executor.submit(
+            models["logicality"].predict, text_df)
+        validness_future = executor.submit(
+            models["validness"].predict, text_df)
+        understanding_future = executor.submit(
+            models["understanding"].predict, text_df)
+        writing_future = executor.submit(models["writing"].predict, text_df)
 
-    return AllScoringResponse(all_scores=result)
+        l_res = logicality_future.result()
+        v_res = validness_future.result()
+        u_res = understanding_future.result()
+        w_res = writing_future.result()
+
+        # attentionの追加
+        result = [
+            ScoringResponse(
+                measurement='論理性',
+                score=to_score(l_res["all_preds"]),
+                attentions=create_word_to_attention(
+                    l_res["all_preds"], l_res["all_attentions"], next(iter(l_res["data_loader"])), tokenizer)
+            ),
+            ScoringResponse(
+                measurement='妥当性',
+                score=to_score(v_res["all_preds"]),
+                attentions=create_word_to_attention(
+                    v_res["all_preds"], v_res["all_attentions"], next(iter(v_res["data_loader"])), tokenizer)
+            ),
+            ScoringResponse(
+                measurement='理解力',
+                score=to_score(u_res["all_preds"]),
+                attentions=create_word_to_attention(
+                    u_res["all_preds"], u_res["all_attentions"], next(iter(u_res["data_loader"])), tokenizer)
+            ),
+            ScoringResponse(
+                measurement='文章力',
+                score=to_score(w_res["all_preds"]),
+                attentions=create_word_to_attention(
+                    w_res["all_preds"], w_res["all_attentions"], next(iter(w_res["data_loader"])), tokenizer)
+            ),
+        ]
+
+        return result
 
 
 class ExampleTextResponse(BaseModel):
@@ -147,7 +212,7 @@ def get_example_generator_model():
 
 
 #################################################
-#
+# ScoringRegressor
 #################################################
 
 
@@ -156,20 +221,18 @@ BERT_MODEL = "cl-tohoku/bert-base-japanese-whole-word-masking"
 # fold=0を評価データにして作成したモデルを，訓練済みモデルとしている
 # - 学習データは，グローバルの小論文課題の回答・スコアデータ
 measurementToPreTrainedModel = {
-    "logicality": "./assets/scoring/model_all_logicality.pth",
-    "validness": "assets/scoring/model_all_validness.pth",
-    "understanding": "assets/scoring/model_all_understanding.pth",
-    "writing": "assets/scoring/model_all_writing.pth",
+    "logicality": "./assets/scoring/scoring_regressor_logicality_model.pth",
+    "validness": "./assets/scoring/scoring_regressor_validness_model.pth",
+    "understanding": "./assets/scoring/scoring_regressor_understanding_model.pth",
+    "writing": "./assets/scoring/scoring_regressor_writing_model.pth",
 }
 
 
 class ScoreRegressionModel:
-    def __init__(self, measurement: str):
+    def __init__(self, measurement: str, tokenizer):
         self.device = torch.device(
             'cuda' if torch.cuda.is_available() else 'cpu')
-
-        self.tokenizer = transformers.BertJapaneseTokenizer.from_pretrained(
-            BERT_MODEL, output_attentions=True)
+        self.tokenizer = tokenizer
 
         regressor = transformers.BertForSequenceClassification.from_pretrained(
             BERT_MODEL, num_labels=1)
@@ -214,14 +277,17 @@ class ScoreRegressionModel:
             all_preds.append(preds)
             all_attentions.append(attentions)
 
-        result = {"all_preds": all_preds, "all_attentions": all_attentions}
+        result = {"all_preds": all_preds,
+                  "all_attentions": all_attentions, "data_loader": data_loader}
         return result
 
 
-logicality_model = ScoreRegressionModel("logicality")
-validness_model = ScoreRegressionModel("logicality")
-understanding_model = ScoreRegressionModel("logicality")
-writing_model = ScoreRegressionModel("logicality")
+tokenizer = transformers.BertJapaneseTokenizer.from_pretrained(
+    BERT_MODEL, output_attentions=True)
+logicality_model = ScoreRegressionModel("logicality", tokenizer)
+validness_model = ScoreRegressionModel("validness", tokenizer)
+understanding_model = ScoreRegressionModel("understanding", tokenizer)
+writing_model = ScoreRegressionModel("writing", tokenizer)
 
 
 # singleton

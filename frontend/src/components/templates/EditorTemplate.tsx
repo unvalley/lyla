@@ -28,7 +28,13 @@ import {
   useToast
 } from '@chakra-ui/react'
 // import { stateToHTML } from 'draft-js-export-html'
-import ky from 'ky'
+import axios, { AxiosResponse } from 'axios'
+
+type ScoringResult = {
+  measurement: string
+  score: number
+  attentions: any
+}
 
 type Props = {}
 
@@ -93,14 +99,13 @@ export const EditorTemplate: React.FC<Props> = () => {
     EditorState.createEmpty()
   )
   const [isScoring, setIsScoring] = useState(false)
-  const measurements = ['論理性', '妥当性', '理解力', '文章力']
-  const [textMeasurementScores, setTextMeasurementScores] = useState([
-    ...measurements.map((e) => {
-      return {
-        measurement: e,
-        score: 0
-      }
-    })
+  const [textMeasurementScores, setTextMeasurementScores] = useState<
+    ScoringResult[]
+  >([
+    { measurement: '論理性', score: 0, attentions: [] },
+    { measurement: '妥当性', score: 0, attentions: [] },
+    { measurement: '理解力', score: 0, attentions: [] },
+    { measurement: '文章力', score: 0, attentions: [] }
   ])
 
   useEffect(() => {
@@ -123,13 +128,18 @@ export const EditorTemplate: React.FC<Props> = () => {
     await _sleep(3000)
 
     const plainText = editorState.getCurrentContent().getPlainText()
-    const scoring_result: any = await ky
-      .post(`https://localhost:8080/api/predict/scores`, {
-        json: { text: plainText }
-      })
-      .json()
 
-    setTextMeasurementScores(scoring_result['all_scores'])
+    // TODO: refactor
+    const scoringResult = await axios
+      .post(`http://localhost:8080/predict/scores`, {
+        text: plainText
+      })
+      .then((res) => {
+        console.log(res.data['all_scores'])
+        return res.data as ScoringResult[]
+      })
+
+    setTextMeasurementScores(scoringResult)
     toast({
       title: `採点が完了しました`,
       position: 'bottom-right',
