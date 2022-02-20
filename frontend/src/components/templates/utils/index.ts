@@ -1,5 +1,11 @@
-export const sumBetween = (l: any[], start: number, end: number) =>
-  l.slice(start, end).reduce((acc, curr, _) => (acc = acc + curr), 0)
+export const sumBetween = (
+  sentenceCharacterCounts: number[],
+  start: number,
+  end: number
+) =>
+  sentenceCharacterCounts
+    .slice(start, end)
+    .reduce((acc, curr, _) => (acc = acc + curr), 0)
 
 /**
  * ハイライト対象の文章のindexを受け取って，ハイライトの開始文字数と終了文字数を返す

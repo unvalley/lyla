@@ -41,19 +41,24 @@ export const problemInfo = {
 }
 
 export const customMap: DraftStyleMap = {
-  VALIDNESS_FEED_BACK: {
+  VALIDNESS_HIGHLIGHT: {
     fontWeight: 'bold',
     color: '#805AD5',
     textDecoration: 'underline'
   },
-  LOGICALITY_FEED_BACK: {
+  LOGICALITY_HIGHLIGHT: {
     fontWeight: 'bold',
     color: '#3182CE',
     textDecoration: 'underline'
   },
-  RED_FEED_BACK: {
+  UNDERSTANDING_HIGHLIGHT: {
     fontWeight: 'bold',
-    color: 'red',
+    color: 'green',
+    textDecoration: 'underline'
+  },
+  WRITING_HIGHLIGHT: {
+    fontWeight: 'bold',
+    color: 'orange',
     textDecoration: 'underline'
   }
 }
@@ -63,4 +68,11 @@ export const measurementToColor: { [key: string]: string } = {
   理解力: 'green',
   文章力: 'orange',
   論理性: 'blue'
+}
+
+export const measurementToDraftStyle: { [key: string]: string } = {
+  妥当性: 'VALIDNESS_HIGHLIGHT',
+  理解力: 'UNDERSTANDING_HIGHLIGHT',
+  文章力: 'WRITING_HIGHLIGHT',
+  論理性: 'LOGICALITY_HIGHLIGHT'
 }
