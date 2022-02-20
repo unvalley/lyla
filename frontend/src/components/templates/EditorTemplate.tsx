@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react'
-import { CompositeDecorator, Editor, EditorState, RichUtils } from 'draft-js'
+import { Editor, EditorState, RichUtils } from 'draft-js'
 import { TwoColumnLayout } from '../common/TwoColumnLayout'
 import 'draft-js/dist/Draft.css'
 import {
@@ -8,7 +8,6 @@ import {
   Spacer,
   Stack,
   Text,
-  toast,
   useDisclosure,
   useToast
 } from '@chakra-ui/react'
@@ -17,7 +16,7 @@ import { problemInfo, feedbacks, customMap } from './seed'
 import { MyModal } from './MyModal'
 import { TextScores } from './TextScores'
 import { FeedbackCard } from './FeedbackCard'
-import { ContentBlock } from 'draft-js'
+import { getHighlighPositionNumbers } from './utils'
 
 export type ScoringResult = {
   measurement: string
@@ -28,10 +27,6 @@ export type ScoringResult = {
 type Props = {}
 
 // https://stackoverflow.com/questions/51665544/how-retrieve-text-from-draftjs
-
-const HighlightFixableText: React.FC = ({ children }) => {
-  return <span style={{ background: 'red', color: 'white' }}>{children}</span>
-}
 
 export const EditorTemplate: React.FC<Props> = () => {
   const toast = useToast()
@@ -55,37 +50,6 @@ export const EditorTemplate: React.FC<Props> = () => {
     setCanShowEditor(true)
     onOpen()
   }, [])
-
-  const handleStrategy = (
-    contentBlock: ContentBlock,
-    callback: (start: number, end: number) => void
-  ) => {
-    findWithRegex(contentBlock, callback)
-  }
-
-  const findWithRegex = (
-    contentBlock: ContentBlock,
-    callback: (start: number, end: number) => void
-  ) => {
-    const highlightTargetIndex = 4
-    const splittedText = contentBlock.getText().split('。')
-    const splittedTextLengths = splittedText.map((e) => e.length)
-
-    const start =
-      splittedTextLengths[highlightTargetIndex] -
-      splittedTextLengths[highlightTargetIndex - 1]
-    const end = splittedTextLengths[highlightTargetIndex]
-    callback(start, end)
-  }
-
-  const createDecorator = () => {
-    return new CompositeDecorator([
-      {
-        strategy: handleStrategy,
-        component: HighlightFixableText
-      }
-    ])
-  }
 
   const editor: any = React.useRef<Editor>()
   const focusEditor = () => {
@@ -113,10 +77,23 @@ export const EditorTemplate: React.FC<Props> = () => {
       { measurement: '文章力', score: 50.0, highlightIndex: 0 }
     ]
 
+    const splittedText = editorState
+      .getCurrentContent()
+      .getPlainText()
+      .split('。')
+    // 。 の分をちゃんと足しておく
+    const sentenceCharacterCounts = splittedText.map((e) => e.length + 1)
+    const logicalityHighlightIndex = mockScoringResult[0].highlightIndex
+
+    const highlightTargetPosition = getHighlighPositionNumbers(
+      sentenceCharacterCounts,
+      logicalityHighlightIndex
+    )
+
     const selectionState = editorState.getSelection()
     const newSelection = selectionState.merge({
-      anchorOffset: 30,
-      focusOffset: 40
+      anchorOffset: highlightTargetPosition.start,
+      focusOffset: highlightTargetPosition.end
     })
     const editorStateWithNewSelection = EditorState.forceSelection(
       editorState,
