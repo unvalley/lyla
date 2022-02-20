@@ -23,17 +23,15 @@ import {
   Stack,
   Text,
   Textarea,
-  toast,
   useDisclosure,
   useToast
 } from '@chakra-ui/react'
-// import { stateToHTML } from 'draft-js-export-html'
-import axios, { AxiosResponse } from 'axios'
+import axios from 'axios'
 
 type ScoringResult = {
   measurement: string
   score: number
-  attentions: any
+  highlightIndex: number
 }
 
 type Props = {}
@@ -87,8 +85,23 @@ const problemInfo = {
     'グローバリゼーションは、世界、または各国の所得格差をどのように変化させましたか。また、なぜ所得格差拡大、または縮小の現象が現れたと考えますか。300字以内で答えなさい。'
 }
 
-// const arraySum = (nums: Array<number>) =>
-//   nums.reduce((partialSum, a) => partialSum + a, 0)
+const customMap: DraftStyleMap = {
+  VALIDNESS_FEED_BACK: {
+    fontWeight: 'bold',
+    color: '#805AD5',
+    textDecoration: 'underline'
+  },
+  LOGICALITY_FEED_BACK: {
+    fontWeight: 'bold',
+    color: '#3182CE',
+    textDecoration: 'underline'
+  },
+  RED_FEED_BACK: {
+    fontWeight: 'bold',
+    color: 'red',
+    textDecoration: 'underline'
+  }
+}
 
 export const EditorTemplate: React.FC<Props> = () => {
   const toast = useToast()
@@ -102,10 +115,10 @@ export const EditorTemplate: React.FC<Props> = () => {
   const [textMeasurementScores, setTextMeasurementScores] = useState<
     ScoringResult[]
   >([
-    { measurement: '論理性', score: 0, attentions: [] },
-    { measurement: '妥当性', score: 0, attentions: [] },
-    { measurement: '理解力', score: 0, attentions: [] },
-    { measurement: '文章力', score: 0, attentions: [] }
+    { measurement: '論理性', score: 0, highlightIndex: 0 },
+    { measurement: '妥当性', score: 0, highlightIndex: 0 },
+    { measurement: '理解力', score: 0, highlightIndex: 0 },
+    { measurement: '文章力', score: 0, highlightIndex: 0 }
   ])
 
   useEffect(() => {
@@ -120,12 +133,8 @@ export const EditorTemplate: React.FC<Props> = () => {
     }
   }
 
-  const _sleep = (ms: number) =>
-    new Promise((resolve) => setTimeout(resolve, ms))
-
   const resetTextMeasurementScores = async () => {
     setIsScoring(true)
-    await _sleep(3000)
 
     const plainText = editorState.getCurrentContent().getPlainText()
 
@@ -155,24 +164,6 @@ export const EditorTemplate: React.FC<Props> = () => {
   }
 
   if (!canShowEditor) return <></>
-
-  const customMap: DraftStyleMap = {
-    VALIDNESS_FEED_BACK: {
-      fontWeight: 'bold',
-      color: '#805AD5',
-      textDecoration: 'underline'
-    },
-    LOGICALITY_FEED_BACK: {
-      fontWeight: 'bold',
-      color: '#3182CE',
-      textDecoration: 'underline'
-    },
-    RED_FEED_BACK: {
-      fontWeight: 'bold',
-      color: 'red',
-      textDecoration: 'underline'
-    }
-  }
 
   return (
     <div className="wrapper" onClick={focusEditor}>
@@ -495,3 +486,5 @@ const FeedBackCard: React.FC<FeedBackCardProps> = (props) => {
 //   const editorState = EditorState.createWithContent(contentState)
 //   setEditorState(editorState)
 // }
+
+const _sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms))
