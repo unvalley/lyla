@@ -1,12 +1,4 @@
-import {
-  Flex,
-  useDisclosure,
-  Heading,
-  Text,
-  Stack,
-  Box,
-  Button
-} from '@chakra-ui/react'
+import { Flex, Heading, Text, Stack, Box, Button } from '@chakra-ui/react'
 import React from 'react'
 
 type Props = {
@@ -59,34 +51,4 @@ export const Header: React.FC<Props> = (props) => {
       </Box>
     </Flex>
   )
-}
-
-{
-  /* <Button
-          colorScheme="purple"
-          onMouseDown={() => {
-            const useLessCondition = new Date().getSeconds() % 2 == 0
-            onChange(
-              RichUtils.toggleInlineStyle(
-                editorState,
-                useLessCondition
-                  ? 'VALIDNESS_FEED_BACK'
-                  : 'LOGICALITY_FEED_BACK'
-              )
-            )
-          }}
-        >
-          ハイライト
-        </Button>
-        <Button
-          colorScheme="red"
-          onMouseDown={() => {
-            onChange(RichUtils.toggleInlineStyle(editorState, 'RED_FEED_BACK'))
-          }}
-          ml={4}
-        >
-          赤でハイライト
-        </Button> */
-}
-{
 }
