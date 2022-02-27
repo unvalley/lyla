@@ -87,26 +87,38 @@ export const EditorTemplate: React.FC<Props> = () => {
     const targetScoringResult = textMeasurementScores.find(
       (e) => e.measurement === measurement
     )
-    if (!targetScoringResult) return
+    if (!targetScoringResult || targetScoringResult.highlightIndex === 0) {
+      alert('ハイライトが先頭の場合，例文生成機能は使えません．')
+      return
+    }
+    console.log(targetScoringResult)
     const usingForexampleTextEndPosition = getHighlightTargetPosition(
       editorState,
       targetScoringResult.highlightIndex
     ).start
 
+    const text = plainText.slice(0, usingForexampleTextEndPosition)
+
+    console.log('推論に使うテキスト', text)
+
     const exampleTextResult = await axios
       .post(`http://localhost:8080/predict/example_text`, {
-        text: plainText.slice(0, usingForexampleTextEndPosition),
+        text,
         measurement: jaToEn[measurement]
       })
       .then((res: AxiosResponse<ExampleTextResult>) => {
         return res.data
       })
 
+    console.log('gpt-2の結果', exampleTextResult)
+
     const newFeedbacks = feedbacks.flatMap((e) => {
       if (e.measurement != measurement) return []
       return {
         ...e,
-        exampleMessage: exampleTextResult.exampleTexts[0]
+        exampleMessage: exampleTextResult.exampleTexts[0].substring(
+          usingForexampleTextEndPosition
+        )
       }
     })
     setFeedbacks(newFeedbacks)

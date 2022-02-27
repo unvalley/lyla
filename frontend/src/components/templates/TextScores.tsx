@@ -47,10 +47,10 @@ export const TextScores: React.FC<Props> = ({
                   <Text fontSize="md" pr={3}>
                     {e.measurement}
                   </Text>
-                  <Text>{e.score}</Text>
+                  <Text>{Math.round(e.score)}</Text>
                 </Flex>
                 <Progress
-                  value={e.score}
+                  value={Math.round(e.score)}
                   colorScheme={measurementToColor[e.measurement]}
                 />
               </Box>
