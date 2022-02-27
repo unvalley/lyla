@@ -19,3 +19,4 @@ class ExampleTextResponse(BaseModel):
 
 class ExampleTextRequest(BaseModel):
     text:  str
+    measurement: str

@@ -18,6 +18,7 @@ type FeedbackCardProps = {
 type Props = {
   editorState: EditorState
   setEditorState: React.Dispatch<React.SetStateAction<EditorState>>
+  getExampleText: (measurement: string) => Promise<void>
 } & FeedbackCardProps
 
 export const FeedbackCard: React.FC<Props> = (props) => {
@@ -76,8 +77,9 @@ export const FeedbackCard: React.FC<Props> = (props) => {
           variant="outline"
           colorScheme={measurementToColor[props.measurement]}
           size="sm"
+          onClick={() => props.getExampleText(props.measurement)}
         >
-          Details
+          例文を取得
         </Button>
         <Button
           colorScheme={measurementToColor[props.measurement]}

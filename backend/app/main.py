@@ -32,10 +32,12 @@ app.add_middleware(
     allow_headers=["*"]
 )
 
+score_regression_models = get_score_regression_models()
+example_generator_models = get_example_generator_models()
+
 
 @app.post("/predict/scores", response_model=List[ScoringResponse])
 async def predict_scores(request: AllScoringRequest):
-    models = get_score_regression_models()
 
     # TODO: パフォーマンス改善
     text_df = pd.DataFrame({'answer': [request.text]})
@@ -45,12 +47,13 @@ async def predict_scores(request: AllScoringRequest):
 
     with confu.ThreadPoolExecutor(max_workers=os.cpu_count()) as executor:
         logicality_future = executor.submit(
-            models["logicality"].predict, text_df)
+            score_regression_models["logicality"].predict, text_df)
         validness_future = executor.submit(
-            models["validness"].predict, text_df)
+            score_regression_models["validness"].predict, text_df)
         understanding_future = executor.submit(
-            models["understanding"].predict, text_df)
-        writing_future = executor.submit(models["writing"].predict, text_df)
+            score_regression_models["understanding"].predict, text_df)
+        writing_future = executor.submit(
+            score_regression_models["writing"].predict, text_df)
 
         l_res = logicality_future.result()
         v_res = validness_future.result()
@@ -92,7 +95,8 @@ async def predict_scores(request: AllScoringRequest):
 async def predict_example_text(request: ExampleTextRequest):
     # 入力をどうするかとか考える必要あるけど，とりあえずtextを受け取ってtextのリストを返せればOK
     # input: Attentionの重いテキストを入力とする
-    model = get_example_generator_model()
+    measurement = request.measurement
+    model = example_generator_models[measurement]
     result = model.predict(request.text)
     return {"exampleTexts": result}
 

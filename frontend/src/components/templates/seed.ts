@@ -37,7 +37,7 @@ export const questionAndSuggestions = [
 export const problemInfo = {
   category: 'グローバル',
   title:
-    'グローバリゼーションは、世界、または各国の所得格差をどのように変化させましたか。また、なぜ所得格差拡大、または縮小の現象が現れたと考えますか。300字以内で答えなさい。'
+    'グローバリゼーションは、世界、または各国の所得格差をどのように変化させましたか。また、なぜ所得格差拡大、または縮小の現象が現れたと考えますか。'
 }
 
 export const customMap: DraftStyleMap = {

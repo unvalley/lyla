@@ -25,6 +25,10 @@ export type ScoringResult = {
   highlightIndex: number
 }
 
+export type ExampleTextResult = {
+  exampleTexts: string[]
+}
+
 type Props = {}
 
 // https://stackoverflow.com/questions/51665544/how-retrieve-text-from-draftjs
@@ -70,6 +74,44 @@ export const EditorTemplate: React.FC<Props> = () => {
     }
   }
 
+  const getExampleText = async (measurement: string) => {
+    const plainText = editorState.getCurrentContent().getPlainText()
+
+    const jaToEn: { [key: string]: string } = {
+      妥当性: 'validness',
+      論理性: 'logicality',
+      理解力: 'understanding',
+      文章力: 'writing'
+    }
+
+    const targetScoringResult = textMeasurementScores.find(
+      (e) => e.measurement === measurement
+    )
+    if (!targetScoringResult) return
+    const usingForexampleTextEndPosition = getHighlightTargetPosition(
+      editorState,
+      targetScoringResult.highlightIndex
+    ).start
+
+    const exampleTextResult = await axios
+      .post(`http://localhost:8080/predict/example_text`, {
+        text: plainText.slice(0, usingForexampleTextEndPosition),
+        measurement: jaToEn[measurement]
+      })
+      .then((res: AxiosResponse<ExampleTextResult>) => {
+        return res.data
+      })
+
+    const newFeedbacks = feedbacks.flatMap((e) => {
+      if (e.measurement != measurement) return []
+      return {
+        ...e,
+        exampleMessage: exampleTextResult.exampleTexts[0]
+      }
+    })
+    setFeedbacks(newFeedbacks)
+  }
+
   const resetTextMeasurementScores = async () => {
     setIsScoring(true)
     const plainText = editorState.getCurrentContent().getPlainText()
@@ -81,21 +123,6 @@ export const EditorTemplate: React.FC<Props> = () => {
       .then((res: AxiosResponse<ScoringResult[]>) => {
         return res.data
       })
-
-    // const scoringResult = [
-    //   { measurement: '論理性', score: 40.0, highlightIndex: 0 },
-    //   { measurement: '妥当性', score: 80.0, highlightIndex: 1 },
-    //   { measurement: '理解力', score: 60.0, highlightIndex: 4 },
-    //   { measurement: '文章力', score: 50.0, highlightIndex: 2 }
-    // ]
-
-    // const highlightedEditorState = getHighlightedEditorState(
-    //   editorState,
-    //   '論理性',
-    //   0
-    // )
-    // setEditorState(highlightedEditorState)
-
     setTextMeasurementScores(scoringResult)
     const newFeedbacks = getFeedback(editorState, scoringResult)
     setFeedbacks(newFeedbacks)
@@ -163,6 +190,7 @@ export const EditorTemplate: React.FC<Props> = () => {
                   editorState={editorState}
                   setEditorState={setEditorState}
                   title={e.title}
+                  getExampleText={getExampleText}
                   message={e.message}
                   measurement={e.measurement}
                   exampleMessage={e.exampleMessage}
@@ -264,6 +292,13 @@ export const removeHighlightStyle = (
   return editorStateWithStylesAndPreviousSelection
 }
 
+const measurementToMessage: { [key: string]: string } = {
+  妥当性: `意見が妥当であることを示すために，論拠を明確にするとよいでしょう．`,
+  論理性: `論理性を向上させるためには，文章の構成・論理構造を再確認するとよいでしょう．`,
+  理解力: `理解力を向上させるためには，課題についての情報をより調査することが有用です．`,
+  文章力: `文章量を向上させるためには，文法的に正しく記述されているか再確認することが有用です．`
+}
+
 const getFeedbackMessages = (
   measurement: string,
   highlightTargetPosition: { start: number; end: number }
@@ -271,9 +306,7 @@ const getFeedbackMessages = (
   return {
     title: measurement,
     measurement: measurement,
-    message: `妥当性の観点で，問題がある可能性があります．見直し・修正を行いましょう．
-    意見が妥当であることを示すために，論拠を明確にするとよいでしょう．
-    `,
+    message: `${measurement}の観点で，問題がある可能性があります．見直し・修正を行いましょう．${measurementToMessage[measurement]}`,
     exampleMessage: '',
     highlightTargetPosition
   }
@@ -298,3 +331,17 @@ const getFeedback = (
   })
   return feedbacks
 }
+
+// const scoringResult = [
+//   { measurement: '論理性', score: 40.0, highlightIndex: 0 },
+//   { measurement: '妥当性', score: 80.0, highlightIndex: 1 },
+//   { measurement: '理解力', score: 60.0, highlightIndex: 4 },
+//   { measurement: '文章力', score: 50.0, highlightIndex: 2 }
+// ]
+
+// const highlightedEditorState = getHighlightedEditorState(
+//   editorState,
+//   '論理性',
+//   0
+// )
+// setEditorState(highlightedEditorState)
