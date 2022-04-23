@@ -6,10 +6,11 @@ import {
   Box,
   Flex,
   Progress,
-  Text
+  Text,
+  Tooltip
 } from '@chakra-ui/react'
 import React from 'react'
-import { ScoringResult } from './EditorTemplate'
+import { ScoringResult } from './features/Editor'
 import { measurementToColor } from './seed'
 
 type Props = {
@@ -23,12 +24,15 @@ export const TextScores: React.FC<Props> = ({
 }) => {
   return (
     <>
-      <Heading size="md">文章スコア</Heading>
-      <Spacer mb={4} />
-
-      <Text>
-        全てのスコアは最大100です．説得的な文章であればあるほど，点数は高くなります．
-      </Text>
+      <Heading size="md">
+        文章スコア
+        <Tooltip
+          label={`説得的な文章であればあるほど，点数は高くなります．`}
+          fontSize="xs"
+        >
+          ◎
+        </Tooltip>
+      </Heading>
       <Spacer mb={4} />
       <SimpleGrid columns={1} spacing={4}>
         {isScoring ? (

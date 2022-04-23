@@ -1,4 +1,4 @@
-import { getHighlighPositionNumbers, sumBetween } from '.'
+import { getHighlighPositionNumbers } from '.'
 
 describe('getHighlightPositionNumbers', () => {
   it('should calculate correctly', () => {

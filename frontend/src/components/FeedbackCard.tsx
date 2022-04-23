@@ -1,7 +1,7 @@
 import { Stack, Button, Text } from '@chakra-ui/react'
 import { EditorState } from 'draft-js'
 import React, { useState } from 'react'
-import { updateEditorStyle } from './EditorTemplate'
+import { updateEditorStyle } from './features/Editor'
 import { measurementToColor } from './seed'
 
 type FeedbackCardProps = {
