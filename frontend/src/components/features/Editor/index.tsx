@@ -1,23 +1,38 @@
 import React, { useEffect, useState } from 'react'
 import { Editor, EditorState, RichUtils } from 'draft-js'
-import { TwoColumnLayout } from '../common/TwoColumnLayout'
+import { TwoColumnLayout } from '../../Layout/TwoColumnLayout'
 import 'draft-js/dist/Draft.css'
+import createCounterPlugin from '@draft-js-plugins/counter'
 import {
   Box,
   Heading,
+  HStack,
+  Radio,
+  RadioGroup,
   Spacer,
   Stack,
   Text,
   useDisclosure,
+  useRadio,
+  useRadioGroup,
   useToast
 } from '@chakra-ui/react'
-import { Header } from './Header'
-import { problemInfo, customMap, measurementToDraftStyle } from './seed'
-import { MyModal } from './MyModal'
-import { TextScores } from './TextScores'
-import { FeedbackCard } from './FeedbackCard'
-import { getHighlighPositionNumbers } from './utils'
+import { Header } from '../../Header'
+import { problemInfo, customMap, measurementToDraftStyle } from '../../seed'
+import { MyModal } from '../../MyModal'
+import { TextScores } from '../../TextScores'
+import { FeedbackCard } from '../../FeedbackCard'
+import { getHighlighPositionNumbers } from '../../utils'
 import axios, { AxiosResponse } from 'axios'
+
+const jaToEn: { [key: string]: string } = {
+  妥当性: 'validness',
+  論理性: 'logicality',
+  理解力: 'understanding',
+  文章力: 'writing'
+}
+const counterPlugin = createCounterPlugin()
+const { CharCounter } = counterPlugin
 
 export type ScoringResult = {
   measurement: string
@@ -44,14 +59,22 @@ type Feedback = {
   }
 }[]
 
-export const EditorTemplate: React.FC<Props> = () => {
-  const toast = useToast()
-  const { isOpen, onOpen, onClose } = useDisclosure()
+const useEditor = () => {
   const [canShowEditor, setCanShowEditor] = useState(false)
   const [editorState, setEditorState] = useState(() =>
     EditorState.createEmpty()
   )
-  const [isScoring, setIsScoring] = useState(false)
+
+  useEffect(() => {
+    setCanShowEditor(true)
+  }, [])
+
+  return { editorState, setEditorState, canShowEditor }
+}
+
+const useFetchScore = () => {}
+
+const useScoring = () => {
   const [textMeasurementScores, setTextMeasurementScores] = useState<
     ScoringResult[]
   >([
@@ -60,12 +83,33 @@ export const EditorTemplate: React.FC<Props> = () => {
     { measurement: '理解力', score: 0, highlightIndex: 0 },
     { measurement: '文章力', score: 0, highlightIndex: 0 }
   ])
-  const [feedbacks, setFeedbacks] = useState<Feedback>([])
+  return { textMeasurementScores, setTextMeasurementScores }
+}
 
-  useEffect(() => {
-    setCanShowEditor(true)
-    onOpen()
-  }, [])
+const useFetchFeedbacks = () => {
+  const [feedbacks, setFeedbacks] = useState<Feedback>([
+    {
+      title: 'タイトル',
+      measurement: '論理性',
+      message: 'ここがダメです',
+      exampleMessage: 'こうすると良いです',
+      highlightTargetPosition: {
+        start: 0,
+        end: 0
+      }
+    }
+  ])
+  return { feedbacks, setFeedbacks }
+}
+
+export const EditorTemplate: React.FC<Props> = () => {
+  const toast = useToast()
+  const { isOpen, onOpen, onClose } = useDisclosure()
+  const [isScoring, setIsScoring] = useState(false)
+
+  const { editorState, setEditorState, canShowEditor } = useEditor()
+  const { textMeasurementScores, setTextMeasurementScores } = useScoring()
+  const { feedbacks, setFeedbacks } = useFetchFeedbacks()
 
   const editor: any = React.useRef<Editor>()
   const focusEditor = () => {
@@ -74,15 +118,12 @@ export const EditorTemplate: React.FC<Props> = () => {
     }
   }
 
+  useEffect(() => {
+    // onOpen()
+  }, [])
+
   const getExampleText = async (measurement: string) => {
     const plainText = editorState.getCurrentContent().getPlainText()
-
-    const jaToEn: { [key: string]: string } = {
-      妥当性: 'validness',
-      論理性: 'logicality',
-      理解力: 'understanding',
-      文章力: 'writing'
-    }
 
     const targetScoringResult = textMeasurementScores.find(
       (e) => e.measurement === measurement
@@ -91,15 +132,13 @@ export const EditorTemplate: React.FC<Props> = () => {
       alert('ハイライトが先頭の場合，例文生成機能は使えません．')
       return
     }
-    console.log(targetScoringResult)
+
     const usingForexampleTextEndPosition = getHighlightTargetPosition(
       editorState,
       targetScoringResult.highlightIndex
     ).start
 
     const text = plainText.slice(0, usingForexampleTextEndPosition)
-
-    console.log('推論に使うテキスト', text)
 
     const exampleTextResult = await axios
       .post(`http://localhost:8080/predict/example_text`, {
@@ -109,8 +148,6 @@ export const EditorTemplate: React.FC<Props> = () => {
       .then((res: AxiosResponse<ExampleTextResult>) => {
         return res.data
       })
-
-    console.log('gpt-2の結果', exampleTextResult)
 
     const newFeedbacks = feedbacks.flatMap((e) => {
       if (e.measurement != measurement) return []
@@ -135,8 +172,9 @@ export const EditorTemplate: React.FC<Props> = () => {
       .then((res: AxiosResponse<ScoringResult[]>) => {
         return res.data
       })
+
     setTextMeasurementScores(scoringResult)
-    const newFeedbacks = getFeedback(editorState, scoringResult)
+    const newFeedbacks = findFeedbacks(editorState, scoringResult)
     setFeedbacks(newFeedbacks)
 
     toast({
@@ -156,7 +194,7 @@ export const EditorTemplate: React.FC<Props> = () => {
   if (!canShowEditor) return <></>
 
   return (
-    <div className="wrapper" onClick={focusEditor}>
+    <div className="wrapper">
       <Header
         isOpen={isOpen}
         onOpen={onOpen}
@@ -173,7 +211,7 @@ export const EditorTemplate: React.FC<Props> = () => {
               <Text fontSize="md">カテゴリ：{problemInfo.category}</Text>
             </Stack>
 
-            <div>
+            <div onClick={focusEditor}>
               <Editor
                 ref={editor}
                 editorKey="key"
@@ -193,6 +231,32 @@ export const EditorTemplate: React.FC<Props> = () => {
             />
             <Spacer mb={6} />
 
+            <Stack boxShadow="lg" borderRadius="sm" p="4">
+              <Heading size="md">質問（for モニタリング）</Heading>
+              <RadioGroup value={'1'} p={2}>
+                <Text fontWeight={'bold'}>
+                  執筆は計画通りに進んでいますか？
+                </Text>
+                <Stack direction="row">
+                  <Radio value="1">進んでいる</Radio>
+                  <Radio value="2">あまり進んでいない</Radio>
+                  <Radio value="3">全く進んでいない</Radio>
+                </Stack>
+              </RadioGroup>
+              <RadioGroup value={'1'} p={2}>
+                <Text fontWeight={'bold'}>
+                  執筆に必要な情報は十分に調べられましたか？
+                </Text>
+                <Stack direction="row">
+                  <Radio value="1">調べられた</Radio>
+                  <Radio value="2">あまり調べられていない</Radio>
+                  <Radio value="3">全く調べられていない</Radio>
+                </Stack>
+              </RadioGroup>
+              <Text>書いた文章を読み返してみましょう．</Text>
+            </Stack>
+
+            <Spacer mb={6} />
             <Heading size="md">フィードバック</Heading>
             {feedbacks.map((e, idx) => {
               return (
@@ -324,7 +388,7 @@ const getFeedbackMessages = (
   }
 }
 
-const getFeedback = (
+const findFeedbacks = (
   editorState: EditorState,
   mockScoringResult: {
     measurement: string
