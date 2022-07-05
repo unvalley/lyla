@@ -1,7 +1,5 @@
 fastapi==0.71.0
 fugashi==1.1.1
-gensim==4.1.2
-huggingface-hub==0.4.0
 ipadic==1.0.0
 japandas==0.5.1
 json5==0.9.6
@@ -9,11 +7,7 @@ jsonschema==4.1.0
 numpy==1.20.2
 pandas==1.2.4
 pydantic==1.9.0
-tokenizers==0.11.4
--f https://download.pytorch.org/whl/torch_stable.html
-torch==1.10.1+cpu
 tqdm==4.62.3
-transformers==4.16.2
 typing-extensions==4.0.0
 uvicorn==0.17.0
-sentencepiece
+scikit-learn==1.1.1
